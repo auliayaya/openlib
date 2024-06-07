@@ -6,6 +6,7 @@ import (
 	"crypto/tls"
 	"encoding/json"
 	"fmt"
+	"github.com/auliayaya/openlib/constants"
 	"github.com/auliayaya/openlib/env"
 	"github.com/auliayaya/openlib/logger"
 	elastic "github.com/elastic/go-elasticsearch/v8"
@@ -258,4 +259,56 @@ func (e ElasticMaster) Delete(request RequestElastic) (response bool, err error)
 		return false, err
 	}
 	return true, err
+}
+
+func (e ElasticMaster) CheckAssetByDocumentID(ctx context.Context, request RequestElastic) (response bool, data map[string]interface{}, err error) {
+	//fmt.Println(" Elasticsearch || request =>", request)
+
+	reqGet := esapi.GetRequest{
+		Index:      request.Index,
+		DocumentID: request.DocumentID,
+	}
+	ctx, cancel := context.WithTimeout(ctx, e.timeout)
+	defer cancel()
+	resGet, err := reqGet.Do(ctx, e.Client)
+	if err != nil {
+		// e.zapLogger.Zap.Error(err)
+		return false, nil, err
+	}
+	defer resGet.Body.Close()
+	//fmt.Println("Resget Heade", resGet.Header)
+	//fmt.Println("Resget body", resGet)
+	//fmt.Println("Resget status", resGet.IsError())
+	response = false
+	if resGet.IsError() {
+		var e map[string]interface{}
+		if err := json.NewDecoder(resGet.Body).Decode(&e); err != nil {
+			log.Printf(constants.ErrorParsingResponseBody, err)
+		}
+		//else {
+		//	log.Printf("[%s] %s ",
+		//		resGet.Status(),
+		//		e["error"])
+		//	if e["error"] != nil {
+		//		response = false
+		//	}
+		//	return response, nil
+		//}
+		if e != nil {
+			response = false
+		}
+		return response, nil, nil
+	}
+	var dataTrx map[string]interface{}
+	if err := json.NewDecoder(resGet.Body).Decode(&dataTrx); err != nil {
+		log.Printf(constants.ErrorParsingResponseBody, err)
+		return false, nil, err
+	}
+	//fmt.Println("Data TRX ", dataTrx)
+	//fmt.Println("Data TRX ", dataTrx["found"].(bool))
+	if dataTrx["found"].(bool) {
+		response = true
+	}
+	//isFound := dataTrx["found"].(map[string]interface{})["total"].(map[string]interface{})["value"].(float64)
+	return response, dataTrx, err
 }
