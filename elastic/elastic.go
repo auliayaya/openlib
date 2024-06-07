@@ -33,6 +33,7 @@ type ElasticAbstract interface {
 	Update(request RequestElastic) (response bool, err error)
 	Search(request RequestElastic) (total float64, response interface{}, err error)
 	Delete(request RequestElastic) (response bool, err error)
+	CheckAssetByDocumentID(ctx context.Context, request RequestElastic) (response bool, data map[string]interface{}, err error)
 }
 
 var _ ElasticAbstract = ElasticMaster{}
