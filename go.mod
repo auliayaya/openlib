@@ -1,8 +1,6 @@
 module github.com/auliayaya/openlib
 
-go 1.22.3
-
-toolchain go1.22.8
+go 1.7
 
 require (
 	github.com/elastic/go-elasticsearch/v8 v8.14.0
